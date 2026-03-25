@@ -50,7 +50,10 @@ const init = async () => {
 
   // Init options
   const masked = password === null ? null : "*".repeat(password.length);
-  const options = user === null || password === null ? {} : { username: user, password: password };
+  const options = {};
+  if (user !== null) options.username = user;
+  if (password !== null) options.password = password;
+  options.protocolVersion = 4;
   options.will = { topic: `${INTEGRATION.root}/kiosk/state`, payload: "Terminated", qos: 1, retain: true };
   options.rejectUnauthorized = !("ignore_certificate_errors" in ARGS);
   options.reconnectPeriod = 10 * 1000;
@@ -101,23 +104,26 @@ const init = async () => {
       // Integration initialized
       INTEGRATION.initialized = true;
 
-      // Register global events
-      EVENTS.on("updateApp", updateApp);
-      EVENTS.on("updateStatus", updateKiosk);
-      EVENTS.on("updateVolume", updateVolume);
-      EVENTS.on("updateKeyboard", updateKeyboard);
-      EVENTS.on("updatePage", () => {
-        updatePageNumber();
-        updatePageZoom();
-        updatePageUrl();
-        updateTheme();
-      });
-      EVENTS.on("updateDisplay", () => {
-        updateDisplay();
-        updateLastActive();
-      });
-      EVENTS.on("updateScreenshot", updateScreenshot);
-      EVENTS.on("consoleLog", updateErrors);
+      // Register global events (only once to prevent listener leaks on reconnect)
+      if (!INTEGRATION.eventsRegistered) {
+        INTEGRATION.eventsRegistered = true;
+        EVENTS.on("updateApp", updateApp);
+        EVENTS.on("updateStatus", updateKiosk);
+        EVENTS.on("updateVolume", updateVolume);
+        EVENTS.on("updateKeyboard", updateKeyboard);
+        EVENTS.on("updatePage", () => {
+          updatePageNumber();
+          updatePageZoom();
+          updatePageUrl();
+          updateTheme();
+        });
+        EVENTS.on("updateDisplay", () => {
+          updateDisplay();
+          updateLastActive();
+        });
+        EVENTS.on("updateScreenshot", updateScreenshot);
+        EVENTS.on("consoleLog", updateErrors);
+      }
     })
     .on("connect", () => {
       console.info(`MQTT Connected: ${connection}`);
@@ -192,10 +198,15 @@ const removeConfig = (type, config) => {
   if (type === null || config === null) {
     return INTEGRATION.client;
   }
+  if (!INTEGRATION.client?.connected) {
+    return INTEGRATION.client;
+  }
   const path = config.unique_id.replace(`${INTEGRATION.node}_`, "");
   const root = `${INTEGRATION.discovery}/${type}/${INTEGRATION.node}/${path}/config`;
   console.debug(`integration.js: removeConfig(${path})`);
-  return INTEGRATION.client.publish(root, JSON.stringify({}), { qos: 1, retain: true });
+  return INTEGRATION.client.publish(root, JSON.stringify({}), { qos: 1, retain: true }, (err) => {
+    if (err) console.debug(`removeConfig(${path}) failed:`, err.message);
+  });
 };
 
 /**
@@ -209,10 +220,15 @@ const publishConfig = (type, config) => {
   if (type === null || config === null) {
     return INTEGRATION.client;
   }
+  if (!INTEGRATION.client?.connected) {
+    return INTEGRATION.client;
+  }
   const path = config.unique_id.replace(`${INTEGRATION.node}_`, "");
   const root = `${INTEGRATION.discovery}/${type}/${INTEGRATION.node}/${path}/config`;
   console.debug(`integration.js: publishConfig(${path})`);
-  return INTEGRATION.client.publish(root, JSON.stringify(config), { qos: 1, retain: true });
+  return INTEGRATION.client.publish(root, JSON.stringify(config), { qos: 1, retain: true }, (err) => {
+    if (err) console.debug(`publishConfig(${path}) failed:`, err.message);
+  });
 };
 
 /**
@@ -226,8 +242,13 @@ const publishAttributes = (path, attributes) => {
   if (path === null || attributes === null) {
     return INTEGRATION.client;
   }
+  if (!INTEGRATION.client?.connected) {
+    return INTEGRATION.client;
+  }
   const root = `${INTEGRATION.root}/${path}/attributes`;
-  return INTEGRATION.client.publish(root, JSON.stringify(attributes), { qos: 1, retain: true });
+  return INTEGRATION.client.publish(root, JSON.stringify(attributes), { qos: 1, retain: true }, (err) => {
+    if (err) console.debug(`publishAttributes(${path}) failed:`, err.message);
+  });
 };
 
 /**
@@ -241,8 +262,13 @@ const publishState = (path, state) => {
   if (path === null || state === null) {
     return INTEGRATION.client;
   }
+  if (!INTEGRATION.client?.connected) {
+    return INTEGRATION.client;
+  }
   const root = `${INTEGRATION.root}/${path}/state`;
-  return INTEGRATION.client.publish(root, `${state}`, { qos: 1, retain: true });
+  return INTEGRATION.client.publish(root, `${state}`, { qos: 1, retain: true }, (err) => {
+    if (err) console.debug(`publishState(${path}) failed:`, err.message);
+  });
 };
 
 /**
