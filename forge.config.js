@@ -28,7 +28,7 @@ module.exports = {
       config: {
         options: {
           productName: "TouchKio",
-          productDescription: "Kiosk mode application for a Home Assistant dashboard",
+          productDescription: "Forked from leukipp/touchkio",
           categories: ["Network"],
           icon: "img/icon.png",
         },
@@ -43,10 +43,10 @@ module.exports = {
       name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: "leukipp",
+          owner: "leejayhsu",
           name: "touchkio",
         },
-        draft: true,
+        draft: false,
       },
     },
   ],
