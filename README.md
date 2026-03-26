@@ -109,6 +109,76 @@ For more information please refer to the [development](https://github.com/leukip
 yarn build
 ```
 
+#### Option 4 - Manual build on Ubuntu
+
+These instructions are for manually building TouchKio on a Ubuntu machine (e.g. for hosting on a server where GitHub Actions pre-built binaries are not available).
+
+1. **Install Node.js 20 and Yarn** (skip if already installed):
+
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+   sudo apt install -y nodejs
+   sudo npm install --global yarn
+   ```
+
+2. **Clone the repository and install dependencies**:
+
+   ```bash
+   git clone https://github.com/leejayhsu/touchkio.git
+   cd touchkio
+   yarn install
+   ```
+
+3. **Build the application**:
+
+   ```bash
+   yarn build
+   ```
+
+   This runs `electron-forge make`, which packages the app and produces a **.deb** file (and **.zip**) in the `out/` directory.
+
+4. **Install the .deb package**:
+
+   ```bash
+   sudo apt install ./out/make/touchkio_*.deb
+   ```
+
+5. **Run the setup**:
+
+   ```bash
+   touchkio --setup
+   ```
+
+   Follow the prompts to configure your Home Assistant URL and other options.
+
+6. **(Optional) Create a systemd user service for auto-start**:
+
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   cat > ~/.config/systemd/user/touchkio.service << 'EOF'
+   [Unit]
+   Description=TouchKio
+   After=graphical.target
+   Wants=network-online.target
+
+   [Service]
+   ExecStart=/usr/bin/touchkio
+   Restart=on-failure
+   RestartSec=5s
+
+   [Install]
+   WantedBy=default.target
+   EOF
+   systemctl --user enable touchkio.service
+   ```
+
+7. **(Optional) If accessing via SSH**, export display variables before running:
+
+   ```bash
+   export DISPLAY=":0"
+   export WAYLAND_DISPLAY="wayland-0"
+   ```
+
 </div></details>
 
 #### Update

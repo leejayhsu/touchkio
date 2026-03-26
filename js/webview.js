@@ -29,7 +29,6 @@ global.WEBVIEW = global.WEBVIEW || {
     widget: {
       focused: null,
     },
-    screenshot: null,
   },
 };
 
@@ -332,10 +331,6 @@ const updateView = () => {
     }
   });
 
-  // Update webview screenshot
-  captureView(1000).then(() => {
-    EVENTS.emit("updateScreenshot");
-  });
   EVENTS.emit("updatePage");
   update();
 };
@@ -717,11 +712,6 @@ const resizeView = () => {
       theme: WEBVIEW.navigationTheme,
     });
   }
-
-  // Update webview screenshot
-  captureView(1000).then(() => {
-    EVENTS.emit("updateScreenshot");
-  });
 };
 
 /**
@@ -1248,16 +1238,6 @@ const appEvents = async () => {
     console.error(`${details.type} Process ${details.reason} (code ${details.exitCode}): ${name}`);
   });
 
-  // Update latest screenshot (every full 1min)
-  interval(() => {
-    if (APP.exiting) {
-      return;
-    }
-    captureView(5000).then(() => {
-      EVENTS.emit("updateScreenshot");
-    });
-  }, 60 * 1000);
-
   // Check latest release (every full 2h)
   interval(() => {
     if (APP.exiting) {
@@ -1366,22 +1346,6 @@ const cookieStore = async (key, value, view = WEBVIEW.views[WEBVIEW.viewActive])
   // Read cookie if no value is provided
   const cookie = (await cookies.get({ url: origin, name: name }))[0] || {};
   return !isNaN(Number(cookie.value)) ? Number(cookie.value) : cookie.value;
-};
-
-/**
- * Captures a webview screenshot as a base64 image.
- *
- * @param {number} wait - The time to wait before capturing in milliseconds.
- * @param {WebContentsView} view - The webview that captures the page.
- * @returns {Promise<string|null>} The base64 image of the captured page or null if failed.
- */
-const captureView = async (wait, view = WEBVIEW.views[WEBVIEW.viewActive]) => {
-  await new Promise((r) => setTimeout(r, wait));
-  const image = await view.webContents.capturePage();
-  const dataUrl = image.toDataURL();
-  const dataString = dataUrl.replace(/^data:image\/\w+;base64,/, "").trim();
-  WEBVIEW.tracker.screenshot = dataString || WEBVIEW.tracker.screenshot;
-  return WEBVIEW.tracker.screenshot;
 };
 
 /**

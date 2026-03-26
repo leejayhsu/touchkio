@@ -1089,34 +1089,6 @@ const updateLastActive = async () => {
 };
 
 /**
- * Initializes the page screenshot.
- */
-const initScreenshot = () => {
-  const root = `${INTEGRATION.root}/screenshot`;
-  const config = {
-    name: "Screenshot",
-    unique_id: `${INTEGRATION.node}_screenshot`,
-    image_topic: `${root}/state`,
-    image_encoding: "b64",
-    content_type: "image/png",
-    entity_category: "diagnostic",
-    icon: "mdi:image-area",
-    device: INTEGRATION.device,
-  };
-  publishConfig("image", config);
-  updateScreenshot();
-};
-
-/**
- * Updates the page screenshot via the mqtt connection.
- */
-const updateScreenshot = async () => {
-  const screenshot = WEBVIEW.tracker.screenshot;
-  if (!screenshot) return;
-  publishState("screenshot", screenshot);
-};
-
-/**
  * Initializes the heartbeat sensor.
  */
 const initHeartbeat = () => {
