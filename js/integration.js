@@ -96,7 +96,6 @@ const init = async () => {
       initLastActive();
 
       // Init client diagnostic
-      initScreenshot();
       initHeartbeat();
       initErrors();
       initVersion();
@@ -121,7 +120,6 @@ const init = async () => {
           updateDisplay();
           updateLastActive();
         });
-        EVENTS.on("updateScreenshot", updateScreenshot);
         EVENTS.on("consoleLog", updateErrors);
       }
     })
@@ -1114,6 +1112,7 @@ const initScreenshot = () => {
  */
 const updateScreenshot = async () => {
   const screenshot = WEBVIEW.tracker.screenshot;
+  if (!screenshot) return;
   publishState("screenshot", screenshot);
 };
 
